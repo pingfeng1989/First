@@ -63,6 +63,18 @@ DEFAULTS = {
 
 ASPECT_PRESETS = {"16:9": 16/9, "4:3": 4/3, "21:9": 21/9, "1:1": 1.0}
 
+LANE_WIDTH_PRESETS = {
+    "China Highway":    3.75,
+    "China Urban":      3.50,
+    "US Interstate":    3.66,
+    "US Urban":         3.30,
+    "Germany Autobahn": 3.75,
+    "UK Motorway":      3.65,
+    "France Highway":   3.50,
+    "Japan Expressway": 3.50,
+    "Japan Urban":      3.00,
+}
+
 
 # ─── 主程序 ────────────────────────────────────────────────
 
@@ -94,6 +106,7 @@ class HudOpticalSimulator:
         self.display_size = tk.DoubleVar(value=DEFAULTS["display_size"])
         self.eyebox_dist = tk.DoubleVar(value=DEFAULTS["eyebox_dist"])
         self.aspect_key = tk.StringVar(value="16:9")
+        self.lane_preset_key = tk.StringVar(value="")
 
         self.view_width = 0.0
         self.view_height = 0.0
@@ -146,10 +159,21 @@ class HudOpticalSimulator:
         ar_menu.pack(side="left", padx=(0, 8))
         ar_menu.bind("<<ComboboxSelected>>", lambda e: self._on_param_change())
 
-        self._create_slider_row(sliders_frame, "Lane W", self.lane_width, 2.5, 4.5, 0.1, "m", 4)
-        self._create_slider_row(sliders_frame, "Veh W", self.vehicle_width, 1.5, 2.5, 0.1, "m", 5)
-        self._create_slider_row(sliders_frame, "Display", self.display_size, 4, 20, 0.5, '"', 6)
-        self._create_slider_row(sliders_frame, "Eyebox", self.eyebox_dist, 0.3, 1.5, 0.05, "m", 7)
+        # Lane width region preset dropdown
+        lane_preset_row = tk.Frame(sliders_frame, bg=COLOR_PANEL_BG)
+        lane_preset_row.grid(row=4, column=0, columnspan=3, sticky="ew", pady=4)
+        tk.Label(lane_preset_row, text="Region:", bg=COLOR_PANEL_BG, fg=COLOR_GREEN,
+                 font=("Consolas", 10), width=8, anchor="w").pack(side="left")
+        lane_menu = ttk.Combobox(lane_preset_row, textvariable=self.lane_preset_key,
+                                 values=list(LANE_WIDTH_PRESETS.keys()),
+                                 state="readonly", width=14)
+        lane_menu.pack(side="left", padx=(0, 4))
+        lane_menu.bind("<<ComboboxSelected>>", self._on_lane_preset)
+
+        self._create_slider_row(sliders_frame, "Lane W", self.lane_width, 2.5, 4.5, 0.1, "m", 5)
+        self._create_slider_row(sliders_frame, "Veh W", self.vehicle_width, 1.5, 2.5, 0.1, "m", 6)
+        self._create_slider_row(sliders_frame, "Display", self.display_size, 4, 20, 0.5, '"', 7)
+        self._create_slider_row(sliders_frame, "Eyebox", self.eyebox_dist, 0.3, 1.5, 0.05, "m", 8)
 
         sliders_frame.columnconfigure(1, weight=1)
 
@@ -266,6 +290,12 @@ class HudOpticalSimulator:
         else:
             return
         self._on_param_change()
+
+    def _on_lane_preset(self, _event=None) -> None:
+        key = self.lane_preset_key.get()
+        if key in LANE_WIDTH_PRESETS:
+            self.lane_width.set(LANE_WIDTH_PRESETS[key])
+            self._on_param_change()
 
     # ─── 参数变更 ───────────────────────────────────────────
 
