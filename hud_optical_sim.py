@@ -189,31 +189,31 @@ class HudOpticalSimulator:
                        font=("Consolas", 10), width=8, anchor="w")
         lbl.grid(row=row, column=0, sticky="w", pady=3)
 
-        entry_var = tk.StringVar(value=f"{var.get():.1f}")
-        entry = tk.Entry(parent, textvariable=entry_var, width=7,
-                         bg="#0c1a26", fg=COLOR_TEXT, insertbackground=COLOR_TEXT,
-                         font=("Consolas", 10, "bold"), relief="flat", justify="right")
-        entry.grid(row=row, column=2, sticky="e", pady=3, padx=(4, 0))
+        spin_var = tk.StringVar(value=f"{var.get():.1f}")
+        spinbox = ttk.Spinbox(parent, textvariable=spin_var, from_=from_, to=to,
+                              increment=resolution, width=6, justify="right",
+                              font=("Consolas", 10, "bold"))
+        spinbox.grid(row=row, column=2, sticky="e", pady=3, padx=(4, 0))
 
-        def on_entry_return(_event=None):
+        def on_spinbox_change(_event=None):
             if self._updating:
                 return
             try:
-                val = float(entry_var.get())
+                val = float(spin_var.get())
                 val = max(from_, min(to, val))
                 var.set(round(val / resolution) * resolution)
             except ValueError:
-                entry_var.set(f"{var.get():.1f}")
+                spin_var.set(f"{var.get():.1f}")
             self._on_param_change()
 
-        entry.bind("<Return>", on_entry_return)
-        entry.bind("<FocusOut>", on_entry_return)
+        spinbox.bind("<Return>", on_spinbox_change)
+        spinbox.bind("<FocusOut>", on_spinbox_change)
 
-        def sync_entry(*_args):
+        def sync_spinbox(*_args):
             if not self._updating:
-                entry_var.set(f"{var.get():.1f}")
+                spin_var.set(f"{var.get():.1f}")
 
-        var.trace_add("write", sync_entry)
+        var.trace_add("write", sync_spinbox)
 
         slider = tk.Scale(parent, variable=var, from_=from_, to=to,
                           resolution=resolution, orient="horizontal",
@@ -223,7 +223,7 @@ class HudOpticalSimulator:
                           command=lambda _: self._on_param_change())
         slider.grid(row=row, column=1, sticky="ew", pady=3, padx=(0, 4))
 
-        sync_entry()
+        sync_spinbox()
 
     def _create_calc_label(self, parent: tk.Frame, label: str, row: int) -> tk.Label:
         tk.Label(parent, text=label, bg=COLOR_PANEL_BG, fg=COLOR_DIM,
