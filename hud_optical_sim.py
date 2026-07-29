@@ -308,7 +308,7 @@ class HudOpticalSimulator:
             self.root.after_cancel(self._redraw_pending)
         self._redraw_pending = self.root.after(30, self._redraw)
 
-    def _on_resize(self, event: tk.Event = None) -> None:
+    def _on_resize(self, _event=None) -> None:
         self._schedule_redraw()
 
     # ─── 透视坐标变换 ──────────────────────────────────────
