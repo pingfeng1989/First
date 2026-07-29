@@ -4,7 +4,7 @@
 运行方式:
     python hud_sim.py
 
-这个示例使用 Tkinter 显示简单的汽车 HUD 数据：车速、燃油、方向、档位和转向状态。
+该示例使用 Tkinter 显示汽车 HUD 类型的信息：车速、燃油、方向、档位、RPM 和转向状态。
 """
 
 import math
@@ -14,20 +14,22 @@ from tkinter import Canvas
 
 FRAME_RATE_MS = 50
 
-class HudSimulator:
+class CarHudSimulator:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("First - Car HUD Simulation")
         self.root.geometry("640x480")
-        self.canvas = Canvas(root, width=640, height=480, bg="#07111f")
+        self.canvas = Canvas(root, width=640, height=480, bg="#041119")
         self.canvas.pack(fill="both", expand=True)
 
         self.speed = 80.0
-        self.fuel = 88
         self.direction = 90.0
+        self.fuel = 92.0
         self.gear = 4
         self.rpm = 2800
         self.steer = 0.0
+        self.turn_signal = 0
+        self.signal_timer = 0
         self.elapsed = 0.0
 
         self.text_items = {}
@@ -35,129 +37,227 @@ class HudSimulator:
         self._schedule_update()
 
     def _create_hud_elements(self) -> None:
-        self._draw_fixed_grid()
+        self._draw_static_layout()
 
-        self.text_items["speed"] = self.canvas.create_text(
-            520, 360,
-            text="SPD 080 km/h",
+        self.text_items["title"] = self.canvas.create_text(
+            20, 20,
+            text="CAR HUD SIM",
             fill="#7affd4",
-            font=("Consolas", 28, "bold"),
-            anchor="e",
-        )
-        self.text_items["fuel"] = self.canvas.create_text(
-            520, 410,
-            text="FUEL 088%",
-            fill="#7affd4",
-            font=("Consolas", 22, "bold"),
-            anchor="e",
+            font=("Consolas", 16, "bold"),
+            anchor="w",
         )
         self.text_items["direction"] = self.canvas.create_text(
-            320, 50,
+            320, 40,
             text="DIR 090°",
             fill="#7affd4",
             font=("Consolas", 24, "bold"),
         )
+        self.text_items["speed"] = self.canvas.create_text(
+            320, 140,
+            text="080 km/h",
+            fill="#ffffff",
+            font=("Consolas", 48, "bold"),
+        )
         self.text_items["gear"] = self.canvas.create_text(
-            520, 320,
-            text="GEAR 4",
+            520, 100,
+            text="4",
+            fill="#7affd4",
+            font=("Consolas", 36, "bold"),
+            anchor="e",
+        )
+        self.text_items["rpm"] = self.canvas.create_text(
+            520, 160,
+            text="RPM 2800",
+            fill="#7affd4",
+            font=("Consolas", 18, "bold"),
+            anchor="e",
+        )
+        self.text_items["fuel"] = self.canvas.create_text(
+            520, 420,
+            text="FUEL 092%",
             fill="#7affd4",
             font=("Consolas", 22, "bold"),
             anchor="e",
         )
         self.text_items["status"] = self.canvas.create_text(
-            320, 450,
-            text="Car HUD Simulation Running",
-            fill="#cbd7ff",
-            font=("Consolas", 16),
-        )
-
-        self.canvas.create_rectangle(80, 170, 260, 310, outline="#7affd4", width=2)
-        self.canvas.create_text(
-            170, 150,
-            text="Steering",
-            fill="#7affd4",
-            font=("Consolas", 14),
-        )
-        self.canvas.create_text(
-            90, 50,
-            text="Use arrow keys to adjust speed/heading",
+            20, 460,
+            text="Use arrows: ↑ accelerate, ↓ brake, ←/→ steer",
             fill="#cbd7ff",
             font=("Consolas", 12),
             anchor="w",
         )
+
         self.root.bind("<Left>", self._turn_left)
         self.root.bind("<Right>", self._turn_right)
-        self.root.bind("<Up>", self._increase_speed)
-        self.root.bind("<Down>", self._decrease_speed)
+        self.root.bind("<Up>", self._accelerate)
+        self.root.bind("<Down>", self._brake)
+        self.root.bind("t", self._toggle_turn_signal)
+        self.root.bind("T", self._toggle_turn_signal)
 
-    def _draw_fixed_grid(self) -> None:
-        for i in range(0, 640, 80):
-            self.canvas.create_line(i, 0, i, 480, fill="#0c2b4a")
-        for j in range(0, 480, 60):
-            self.canvas.create_line(0, j, 640, j, fill="#0c2b4a")
-        self.canvas.create_oval(280, 190, 360, 270, outline="#7affd4", width=2)
-        self.canvas.create_line(320, 190, 320, 270, fill="#7affd4", width=2)
-        self.canvas.create_line(280, 230, 360, 230, fill="#7affd4", width=2)
+    def _draw_static_layout(self) -> None:
+        self.canvas.create_rectangle(30, 30, 610, 140, outline="#0c4d73", width=2)
+        self.canvas.create_rectangle(30, 150, 310, 450, outline="#0c4d73", width=2)
+        self.canvas.create_rectangle(330, 150, 610, 450, outline="#0c4d73", width=2)
+        self.canvas.create_text(
+            170, 180,
+            text="SPEED",
+            fill="#7affd4",
+            font=("Consolas", 14),
+        )
+        self.canvas.create_text(
+            470, 180,
+            text="CAR STATUS",
+            fill="#7affd4",
+            font=("Consolas", 14),
+        )
+        self.canvas.create_text(
+            470, 330,
+            text="FUEL",
+            fill="#7affd4",
+            font=("Consolas", 14),
+        )
+        self.canvas.create_text(
+            170, 400,
+            text="STEERING",
+            fill="#7affd4",
+            font=("Consolas", 14),
+        )
+
+        self.canvas.create_arc(
+            45, 210, 275, 440,
+            start=135,
+            extent=270,
+            style="arc",
+            outline="#184657",
+            width=8,
+        )
+        self.canvas.create_rectangle(345, 360, 585, 430, outline="#184657", width=3)
+        self.canvas.create_line(345, 355, 585, 355, fill="#184657", width=2)
+        self.canvas.create_text(
+            345, 340,
+            text="TURN SIGNAL",
+            fill="#7affd4",
+            font=("Consolas", 12),
+            anchor="w",
+        )
 
     def _update_simulation(self) -> None:
         self.elapsed += FRAME_RATE_MS / 1000.0
-        self.speed += random.uniform(-0.6, 0.6)
-        self.direction = (self.direction + random.uniform(-0.1, 0.1)) % 360
-        self.steer = math.sin(self.elapsed * 1.2) * 18
-        self.fuel = max(0, self.fuel - 0.005)
-        self.rpm = int(800 + self.speed * 30 + abs(self.steer) * 5)
+        self.speed += random.uniform(-0.25, 0.25)
+        self.direction = (self.direction + random.uniform(-0.12, 0.12)) % 360
+        self.fuel = max(0.0, self.fuel - self.speed * 0.00025)
+        self.rpm = int(700 + self.speed * 22 + abs(self.steer) * 12)
 
-        if self.speed < 20:
+        if self.speed < 10:
             self.gear = 1
-        elif self.speed < 40:
+        elif self.speed < 30:
             self.gear = 2
-        elif self.speed < 70:
+        elif self.speed < 60:
             self.gear = 3
-        elif self.speed < 110:
+        elif self.speed < 100:
             self.gear = 4
         else:
             self.gear = 5
 
-        self.speed = max(0.0, min(200.0, self.speed))
+        self.speed = max(0.0, min(220.0, self.speed))
 
-        self.canvas.itemconfigure(self.text_items["speed"], text=f"SPD {int(self.speed):03d} km/h")
-        self.canvas.itemconfigure(self.text_items["fuel"], text=f"FUEL {int(self.fuel):03d}%")
+        if self.turn_signal != 0:
+            self.signal_timer += 1
+            if self.signal_timer % 10 == 0:
+                self.turn_signal = -self.turn_signal
+        else:
+            self.signal_timer = 0
+
         self.canvas.itemconfigure(self.text_items["direction"], text=f"DIR {int(self.direction):03d}°")
-        self.canvas.itemconfigure(self.text_items["gear"], text=f"GEAR {self.gear}")
+        self.canvas.itemconfigure(self.text_items["speed"], text=f"{int(self.speed):03d} km/h")
+        self.canvas.itemconfigure(self.text_items["gear"], text=f"{self.gear}")
+        self.canvas.itemconfigure(self.text_items["rpm"], text=f"RPM {self.rpm}")
+        self.canvas.itemconfigure(self.text_items["fuel"], text=f"FUEL {int(self.fuel):03d}%")
 
+        self._draw_speed_needle()
         self._draw_steering_indicator()
+        self._draw_turn_signal()
+
+    def _draw_speed_needle(self) -> None:
+        self.canvas.delete("speed_needle")
+        angle = 135 - (self.speed / 220.0) * 270.0
+        radians = math.radians(angle)
+        center_x, center_y = 160, 325
+        length = 110
+        end_x = center_x + math.cos(radians) * length
+        end_y = center_y - math.sin(radians) * length
+        self.canvas.create_line(
+            center_x,
+            center_y,
+            end_x,
+            end_y,
+            fill="#ffb347",
+            width=4,
+            arrow="last",
+            tags="speed_needle",
+        )
+        self.canvas.create_oval(
+            center_x - 8,
+            center_y - 8,
+            center_x + 8,
+            center_y + 8,
+            fill="#7affd4",
+            outline="",
+            tags="speed_needle",
+        )
 
     def _draw_steering_indicator(self) -> None:
-        self.canvas.delete("steering_line")
-        center_x, center_y = 170, 240
-        radius = 60
-        offset = math.sin(math.radians(self.steer)) * 20
+        self.canvas.delete("steering_indicator")
+        center_x, center_y = 170, 410
+        radius = 80
+        offset = math.sin(math.radians(self.steer)) * radius * 0.6
 
         self.canvas.create_line(
             center_x - radius,
             center_y,
             center_x + radius,
             center_y,
-            fill="#ffb347",
+            fill="#7affd4",
             width=3,
-            tags="steering_line",
+            tags="steering_indicator",
         )
         self.canvas.create_line(
             center_x + offset,
-            center_y - radius,
-            center_x - offset,
-            center_y + radius,
-            fill="#7affd4",
-            width=2,
-            tags="steering_line",
+            center_y - radius * 0.35,
+            center_x + offset,
+            center_y + radius * 0.35,
+            fill="#ffb347",
+            width=5,
+            tags="steering_indicator",
         )
         self.canvas.create_text(
             center_x,
-            center_y + 70,
-            text=f"STEER {self.steer:+.1f}°  RPM {self.rpm}",
+            center_y + 60,
+            text=f"STEER {self.steer:+.1f}°",
             fill="#7affd4",
             font=("Consolas", 12),
-            tags="steering_line",
+            tags="steering_indicator",
+        )
+
+    def _draw_turn_signal(self) -> None:
+        self.canvas.delete("turn_signal")
+        if self.turn_signal == 0:
+            text = "OFF"
+            color = "#4f7c99"
+        elif self.turn_signal < 0:
+            text = "LEFT"
+            color = "#ffb347"
+        else:
+            text = "RIGHT"
+            color = "#ffb347"
+
+        self.canvas.create_text(
+            470,
+            380,
+            text=text,
+            fill=color,
+            font=("Consolas", 24, "bold"),
+            tags="turn_signal",
         )
 
     def _schedule_update(self) -> None:
@@ -167,21 +267,33 @@ class HudSimulator:
     def _turn_left(self, event: tk.Event) -> None:
         self.direction = (self.direction - 3) % 360
         self.steer = max(-45.0, self.steer - 5.0)
+        if self.turn_signal >= 0:
+            self.turn_signal = -1
 
     def _turn_right(self, event: tk.Event) -> None:
         self.direction = (self.direction + 3) % 360
         self.steer = min(45.0, self.steer + 5.0)
+        if self.turn_signal <= 0:
+            self.turn_signal = 1
 
-    def _increase_speed(self, event: tk.Event) -> None:
-        self.speed = min(200.0, self.speed + 5.0)
+    def _accelerate(self, event: tk.Event) -> None:
+        self.speed = min(220.0, self.speed + 5.0)
 
-    def _decrease_speed(self, event: tk.Event) -> None:
+    def _brake(self, event: tk.Event) -> None:
         self.speed = max(0.0, self.speed - 5.0)
+
+    def _toggle_turn_signal(self, event: tk.Event) -> None:
+        if self.turn_signal == 0:
+            self.turn_signal = -1
+        elif self.turn_signal < 0:
+            self.turn_signal = 1
+        else:
+            self.turn_signal = 0
 
 
 def main() -> None:
     root = tk.Tk()
-    HudSimulator(root)
+    CarHudSimulator(root)
     root.mainloop()
 
 
