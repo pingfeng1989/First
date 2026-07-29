@@ -19,6 +19,19 @@
 | Display Size | HUD 显示屏尺寸 | 4-20 inch |
 | Eye-box Distance | 眼睛到 HUD 距离 | 0.3-1.5 m |
 
+内置全球主要地区标准车道宽度预设，选择后自动设置：
+
+| 预设 | 宽度 |
+|------|------|
+| China Highway | 3.75 m |
+| China Urban | 3.50 m |
+| US Interstate | 3.66 m |
+| US Urban | 3.30 m |
+| Germany Autobahn | 3.75 m |
+| UK Motorway | 3.65 m |
+| Japan Expressway | 3.50 m |
+| Japan Urban | 3.00 m |
+
 所有参数均支持滑块拖动和手动输入。
 
 交互方式：
