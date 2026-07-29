@@ -1,4 +1,4 @@
-# hello-world
+# First
 just hello
 
 life is short, i chose python!
