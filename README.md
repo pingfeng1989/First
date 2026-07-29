@@ -43,8 +43,8 @@ python hud_sim.py
 
 支持的光学参数：
 - `VID` — 虚像距离 (2-50m)
-- `H-FOV` — 水平视场角 (10-120°)
-- `V-FOV` — 垂直视场角 (5-60°)
+- `H-FOV` — 水平视场角 (0-30°)
+- `V-FOV` — 垂直视场角 (0-10°)
 - `Lane Width` — 车道宽度 (2.5-4.5m)
 - `Display Size` — HUD 显示屏尺寸 (4-20 inch)
 - `Eye-box Distance` — 眼睛到 HUD 距离 (0.3-1.5m)
