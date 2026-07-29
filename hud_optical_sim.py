@@ -132,7 +132,7 @@ class HudOpticalSimulator:
         sliders_frame = tk.Frame(parent, bg=COLOR_PANEL_BG)
         sliders_frame.pack(fill="x", padx=10)
 
-        self._create_slider_row(sliders_frame, "VID", self.vid, 5, 200, 0.5, "m", 0)
+        self._create_slider_row(sliders_frame, "VID", self.vid, 2, 50, 0.5, "m", 0)
         self._create_slider_row(sliders_frame, "H-FOV", self.h_fov, 10, 120, 0.5, "deg", 1)
         self._create_slider_row(sliders_frame, "V-FOV", self.v_fov, 5, 60, 0.5, "deg", 2)
 
@@ -236,9 +236,9 @@ class HudOpticalSimulator:
     def _on_key(self, event: tk.Event) -> None:
         key = event.keysym
         if key in ("plus", "equal"):
-            self.vid.set(min(200.0, self.vid.get() + 1.0))
+            self.vid.set(min(50.0, self.vid.get() + 1.0))
         elif key == "minus":
-            self.vid.set(max(5.0, self.vid.get() - 1.0))
+            self.vid.set(max(2.0, self.vid.get() - 1.0))
         elif key == "bracketright":
             self.h_fov.set(min(120.0, self.h_fov.get() + 1.0))
         elif key == "bracketleft":
@@ -447,7 +447,7 @@ class HudOpticalSimulator:
             c.create_text(sx_i, sy_i + 14, text=txt,
                           fill=COLOR_DIM, font=("Consolas", 8), tags="annot")
 
-        c.create_text(w / 2, horizon_y - 10, text="Horizon",
+        c.create_text(w / 2, h * 0.28 - 10, text="Horizon",
                       fill=COLOR_DIM, font=("Consolas", 9), anchor="s", tags="annot")
 
     # ─── 鼠标悬停 ──────────────────────────────────────────
